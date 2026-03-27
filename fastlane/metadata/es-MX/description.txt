@@ -1,0 +1,10 @@
+WaySplit es una herramienta para dividir gastos de viaje, diseñada para registrar cada gasto, dividir costos automáticamente y mostrar claramente quién debe cuánto al final del viaje.
+
+Funciones principales:
+- Crea viajes con destino, fechas y moneda base
+- Toma una foto o selecciona recibos de tu galería — la IA detecta montos, comercios y artículos automáticamente
+- Soporte multimoneda con conversión de tipo de cambio
+- Grupos de división personalizados con opciones flexibles por gasto
+- Liquidaciones calculadas automáticamente con sugerencias de transferencias mínimas
+- Desglose de gastos por categoría (comida, transporte, compras, hospedaje y más)
+- Entrada manual y acciones rápidas disponibles

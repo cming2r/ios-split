@@ -1,0 +1,1 @@
+A smart travel expense splitter. Scan receipts with AI, handle multiple currencies, and settle up clearly.

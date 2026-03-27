@@ -1,0 +1,10 @@
+WaySplit is a travel expense splitting tool designed to track every expense, automatically split costs, and clearly show who owes what when the trip is over.
+
+Key Features:
+- Create trips with destination, dates, and base currency
+- Snap a photo or pick receipts from your album — AI auto-detects amounts, merchants, and items
+- Multi-currency support with exchange rate conversion
+- Custom split groups with flexible cost-sharing options per expense
+- Auto-calculated settlements with minimal transfer suggestions
+- Spending breakdown by category (dining, transport, shopping, accommodation, and more)
+- Manual entry and quick actions supported

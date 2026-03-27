@@ -1,0 +1,47 @@
+default_platform(:ios)
+
+platform :ios do
+  desc "Capture App Store screenshots"
+  lane :screenshots do
+    capture_ios_screenshots
+  end
+
+  desc "Push a new beta build to TestFlight"
+  lane :beta do
+    build_app(
+      scheme: "split",
+      export_method: "app-store"
+    )
+    upload_to_testflight
+  end
+
+  desc "Push a new release build to the App Store"
+  lane :release do
+    build_app(
+      scheme: "split",
+      export_method: "app-store"
+    )
+    upload_to_app_store(
+      force: true,
+      skip_screenshots: true
+    )
+  end
+
+  desc "Upload metadata only (no binary)"
+  lane :metadata do
+    begin
+      upload_to_app_store(
+        skip_binary_upload: true,
+        skip_screenshots: true,
+        force: true,
+        copyright: "2026 Turadise"
+      )
+    rescue => e
+      if e.message.include?("No data")
+        UI.important("⚠️  Metadata uploaded successfully, but review info fetch failed (expected for new apps). Skipping.")
+      else
+        raise e
+      end
+    end
+  end
+end

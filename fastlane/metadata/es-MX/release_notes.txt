@@ -1,0 +1,7 @@
+Lanzamiento inicial v1.0
+
+- Crea viajes y grupos de división
+- Escaneo de recibos con IA
+- Soporte multimoneda con tipos de cambio
+- Liquidación automática con sugerencias de transferencias mínimas
+- Desglose de gastos por categoría

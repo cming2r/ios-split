@@ -1,0 +1,7 @@
+/* アプリ名 */
+"CFBundleDisplayName" = "WaySplit";
+"CFBundleName" = "WaySplit";
+
+/* 権限の説明 */
+"NSCameraUsageDescription" = "レシートを撮影するためにカメラへのアクセスが必要です";
+"NSPhotoLibraryUsageDescription" = "レシート画像を選択するために写真ライブラリへのアクセスが必要です";

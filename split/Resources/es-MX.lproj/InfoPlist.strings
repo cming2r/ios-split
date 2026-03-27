@@ -1,0 +1,7 @@
+/* Nombre de la app */
+"CFBundleDisplayName" = "WaySplit";
+"CFBundleName" = "WaySplit";
+
+/* Descripciones de permisos */
+"NSCameraUsageDescription" = "Se necesita acceso a la cámara para capturar recibos";
+"NSPhotoLibraryUsageDescription" = "Se necesita acceso a la galería para seleccionar imágenes de recibos";

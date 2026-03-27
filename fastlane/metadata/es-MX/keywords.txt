@@ -1,0 +1,1 @@
+dividir,viaje,gastos,recibo,escáner,cuenta,moneda,cambio,presupuesto,pagar

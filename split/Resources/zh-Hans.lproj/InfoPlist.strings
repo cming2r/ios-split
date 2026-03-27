@@ -1,0 +1,7 @@
+/* App 名称 */
+"CFBundleDisplayName" = "WaySplit";
+"CFBundleName" = "WaySplit";
+
+/* 权限描述 */
+"NSCameraUsageDescription" = "需要相机权限来拍摄发票和收据";
+"NSPhotoLibraryUsageDescription" = "需要相册权限来选择发票和收据照片";
