@@ -61,11 +61,26 @@ class GeminiOCRService {
 
     private init() {}
 
+    /// 壓縮圖片：最長邊不超過 maxLength，確保 base64 後不超過 Vercel 4.5MB 限制
+    private func compressImage(_ image: UIImage, maxLength: CGFloat = 1024) -> Data? {
+        let size = image.size
+        let targetImage: UIImage
+        if max(size.width, size.height) > maxLength {
+            let scale = maxLength / max(size.width, size.height)
+            let newSize = CGSize(width: size.width * scale, height: size.height * scale)
+            let renderer = UIGraphicsImageRenderer(size: newSize)
+            targetImage = renderer.image { _ in image.draw(in: CGRect(origin: .zero, size: newSize)) }
+        } else {
+            targetImage = image
+        }
+        return targetImage.jpegData(compressionQuality: 0.7)
+    }
+
     func recognizeReceipts(from images: [UIImage], currencyCode: String? = nil) async throws -> GeminiOCRResult {
         guard let image = images.first else {
             throw GeminiOCRError.invalidImage
         }
-        guard let imageData = image.jpegData(compressionQuality: 0.8) else {
+        guard let imageData = compressImage(image) else {
             throw GeminiOCRError.invalidImage
         }
         guard let url = URL(string: baseURL) else {

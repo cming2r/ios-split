@@ -13,8 +13,11 @@ struct TripDetailView: View {
     @State private var showingSettlement = false
     @State private var showingDeleteAlert = false
     @State private var selectedCategoryId: String?
+    let isSample: Bool
+    let sampleExpenses: [SplitExpense]?
     let switchToScanTab: () -> Void
     var onTripUpdated: (() -> Void)?
+    var onSampleDismissed: (() -> Void)?
 
     // Camera & Photo scanning
     @State private var showingCamera = false
@@ -75,28 +78,39 @@ struct TripDetailView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    Button(action: { showingEditTrip = true }) {
-                        Label("editTrip", systemImage: "pencil")
+                    if !isSample {
+                        Button(action: { showingEditTrip = true }) {
+                            Label("editTrip", systemImage: "pencil")
+                        }
+                        Divider()
+                        Section("scan") {
+                            Button(action: { checkCameraPermission() }) {
+                                Label("takePhoto", systemImage: "camera")
+                            }
+                            Button(action: { showingPhotoLibrary = true }) {
+                                Label("chooseFromPhotos", systemImage: "photo.on.rectangle")
+                            }
+                            Button(action: { showingAddExpense = true }) {
+                                Label("manualEntry", systemImage: "keyboard")
+                            }
+                        }
+                        Divider()
                     }
-                    Divider()
-                    Section("scan") {
-                        Button(action: { checkCameraPermission() }) {
-                            Label("takePhoto", systemImage: "camera")
-                        }
-                        Button(action: { showingPhotoLibrary = true }) {
-                            Label("chooseFromPhotos", systemImage: "photo.on.rectangle")
-                        }
-                        Button(action: { showingAddExpense = true }) {
-                            Label("manualEntry", systemImage: "keyboard")
-                        }
-                    }
-                    Divider()
                     Button(action: { showingSettlement = true }) {
                         Label("settlement", systemImage: "arrow.left.arrow.right")
                     }
-                    Divider()
-                    Button(role: .destructive, action: { showingDeleteAlert = true }) {
-                        Label("deleteTrip", systemImage: "trash")
+                    if !isSample {
+                        Divider()
+                        Button(role: .destructive, action: { showingDeleteAlert = true }) {
+                            Label("deleteTrip", systemImage: "trash")
+                        }
+                    } else {
+                        Divider()
+                        Button(role: .destructive) {
+                            onSampleDismissed?()
+                        } label: {
+                            Label("sample.dismiss", systemImage: "xmark.circle")
+                        }
                     }
                 } label: {
                     Image(systemName: "ellipsis.circle")
@@ -225,6 +239,10 @@ struct TripDetailView: View {
     }
 
     private func loadExpenses() {
+        if let sampleExpenses {
+            expenses = sampleExpenses
+            return
+        }
         Task {
             do {
                 expenses = try await SplitService.shared.fetchExpenses(tripId: trip.id)
@@ -631,6 +649,8 @@ struct SettlementView: View {
     NavigationStack {
         TripDetailView(
             trip: SplitTrip(name: "日本旅行", destinationCountryCode: "JP"),
+            isSample: false,
+            sampleExpenses: nil,
             switchToScanTab: {}
         )
     }

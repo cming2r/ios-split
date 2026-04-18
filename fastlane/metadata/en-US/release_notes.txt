@@ -1,7 +1,2 @@
-Initial release v1.0
-
-- Create trips and split groups
-- AI-powered receipt scanning
-- Multi-currency support with exchange rates
-- Auto-settlement with minimal transfer suggestions
-- Spending breakdown by category
+- Improved receipt scanning stability
+- Fixed trip loading issue

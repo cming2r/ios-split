@@ -9,30 +9,65 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var quickActionManager: QuickActionManager
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @State private var selectedTab = 0
 
+    @State private var adRefreshID = UUID().uuidString
+    @State private var isAdLoaded = false
+
     var body: some View {
-        TabView(selection: $selectedTab) {
-            TripListView(switchToScanTab: { selectedTab = 1 })
-                .tabItem {
-                    Image(systemName: "airplane")
-                    Text("tab.trips")
-                }
-                .tag(0)
+        if !hasCompletedOnboarding {
+            OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
+        } else {
+            mainContent
+        }
+    }
 
-            ScannerView()
-                .tabItem {
-                    Image(systemName: "doc.text.viewfinder")
-                    Text("tab.scan")
-                }
-                .tag(1)
+    private var mainContent: some View {
+        ZStack(alignment: .bottom) {
+            TabView(selection: $selectedTab) {
+                TripListView(switchToScanTab: { selectedTab = 1 })
+                    .tabItem {
+                        Image(systemName: "airplane")
+                        Text("tab.trips")
+                    }
+                    .tag(0)
 
-            SettingsView()
-                .tabItem {
-                    Image(systemName: "gearshape")
-                    Text("tab.settings")
+                ScannerView()
+                    .tabItem {
+                        Image(systemName: "doc.text.viewfinder")
+                        Text("tab.scan")
+                    }
+                    .tag(1)
+
+                SettingsView()
+                    .tabItem {
+                        Image(systemName: "gearshape")
+                        Text("tab.settings")
+                    }
+                    .tag(2)
+            }
+
+            if isAdLoaded {
+                VStack(spacing: 0) {
+                    Spacer()
+                    BannerAdView(isAdLoaded: $isAdLoaded)
+                        .frame(height: 50)
+                        .frame(maxWidth: .infinity)
+                        .background(Color(.systemBackground))
+                        .id(adRefreshID)
+                        .padding(.bottom, 49)
                 }
-                .tag(2)
+                .ignoresSafeArea(.keyboard)
+            } else {
+                BannerAdView(isAdLoaded: $isAdLoaded)
+                    .frame(height: 0)
+                    .hidden()
+                    .id(adRefreshID)
+            }
+        }
+        .onChange(of: selectedTab) {
+            adRefreshID = UUID().uuidString
         }
         .onChange(of: quickActionManager.selectedAction) { _, newAction in
             handleQuickAction(newAction)

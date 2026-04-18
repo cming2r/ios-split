@@ -23,6 +23,7 @@ struct ScannerView: View {
     @State private var hasHandledQuickAction = false
     @State private var isLoadingTrips = true
     @State private var showingAddTrip = false
+    @State private var showingSampleTrip = false
 
     var selectedTrip: SplitTrip? {
         trips.first { $0.id == selectedTripId }
@@ -39,10 +40,25 @@ struct ScannerView: View {
                     } description: {
                         Text("createTripBeforeScanning")
                     } actions: {
-                        Button("newTrip") {
-                            showingAddTrip = true
+                        VStack(spacing: 24) {
+                            Button("newTrip") {
+                                showingAddTrip = true
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.regular)
+
+                            if !SampleDataService.shared.hasDismissed {
+                                Button {
+                                    showingSampleTrip = true
+                                } label: {
+                                    Label("sample.viewExample", systemImage: "eye")
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .controlSize(.regular)
+                                .tint(.orange)
+                            }
                         }
-                        .buttonStyle(.borderedProminent)
                     }
                 } else {
                     if !selectedImages.isEmpty {
@@ -202,6 +218,9 @@ struct ScannerView: View {
                 }
             }
             .task {
+                while !AuthService.shared.isReady {
+                    try? await Task.sleep(for: .milliseconds(50))
+                }
                 await loadTrips()
             }
             .onAppear {
@@ -255,6 +274,27 @@ struct ScannerView: View {
             }
             .sheet(isPresented: $showingAddTrip, onDismiss: { Task { await loadTrips() } }) {
                 TripEditView(mode: .add)
+            }
+            .sheet(isPresented: $showingSampleTrip) {
+                NavigationStack {
+                    TripDetailView(
+                        trip: SampleDataService.shared.sampleTrip,
+                        isSample: true,
+                        sampleExpenses: SampleDataService.shared.sampleExpenses,
+                        switchToScanTab: {},
+                        onSampleDismissed: {
+                            SampleDataService.shared.dismiss()
+                            showingSampleTrip = false
+                        }
+                    )
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button("close") {
+                                showingSampleTrip = false
+                            }
+                        }
+                    }
+                }
             }
             .alert("error", isPresented: $showingError) {
                 Button("ok", role: .cancel) {}

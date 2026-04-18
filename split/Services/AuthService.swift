@@ -11,6 +11,7 @@ class AuthService: ObservableObject {
     @Published var isAuthenticated = false
     @Published var userEmail: String?
     @Published var userId: UUID?
+    @Published var isReady = false
 
     private let client: SupabaseClient
 
@@ -27,6 +28,7 @@ class AuthService: ObservableObject {
         } catch {
             clearSession()
         }
+        isReady = true
     }
 
     // MARK: - Apple Sign In

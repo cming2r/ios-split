@@ -7,7 +7,7 @@ struct TripListView: View {
     @State private var expenses: [UUID: [SplitExpense]] = [:]  // tripId -> expenses
     @State private var showingAddTrip = false
     @State private var searchText = ""
-    @State private var isLoading = false
+    @State private var isLoading = true
     @State private var navigationPath = NavigationPath()
     @State private var hasRestoredNavigation = false
     let switchToScanTab: () -> Void
@@ -16,11 +16,18 @@ struct TripListView: View {
         UUID(uuidString: defaultTripIdString)
     }
 
-    var filteredTrips: [SplitTrip] {
-        if searchText.isEmpty {
+    private var allTrips: [SplitTrip] {
+        if SampleDataService.shared.hasDismissed {
             return trips
         }
-        return trips.filter {
+        return [SampleDataService.shared.sampleTrip] + trips
+    }
+
+    var filteredTrips: [SplitTrip] {
+        if searchText.isEmpty {
+            return allTrips
+        }
+        return allTrips.filter {
             $0.name.localizedCaseInsensitiveContains(searchText) ||
             (Locale.current.localizedString(forRegionCode: $0.destinationCountryCode) ?? "")
                 .localizedCaseInsensitiveContains(searchText)
@@ -30,7 +37,7 @@ struct TripListView: View {
     var body: some View {
         NavigationStack(path: $navigationPath) {
             Group {
-                if trips.isEmpty && !isLoading {
+                if allTrips.isEmpty && !isLoading {
                     ContentUnavailableView {
                         Label("noTrips", systemImage: "airplane")
                     } description: {
@@ -47,17 +54,32 @@ struct TripListView: View {
                             NavigationLink(value: trip.id) {
                                 TripRowView(
                                     trip: trip,
-                                    expenses: expenses[trip.id] ?? [],
+                                    expenses: SampleDataService.isSampleTrip(trip.id)
+                                        ? SampleDataService.shared.sampleExpenses
+                                        : (expenses[trip.id] ?? []),
                                     isDefault: trip.id == defaultTripId
                                 )
                             }
                             .swipeActions(edge: .leading) {
-                                Button {
-                                    setDefaultTrip(trip)
-                                } label: {
-                                    Label("default", systemImage: "star.fill")
+                                if !SampleDataService.isSampleTrip(trip.id) {
+                                    Button {
+                                        setDefaultTrip(trip)
+                                    } label: {
+                                        Label("default", systemImage: "star.fill")
+                                    }
+                                    .tint(.orange)
                                 }
-                                .tint(.orange)
+                            }
+                            .swipeActions(edge: .trailing) {
+                                if SampleDataService.isSampleTrip(trip.id) {
+                                    Button(role: .destructive) {
+                                        withAnimation {
+                                            SampleDataService.shared.dismiss()
+                                        }
+                                    } label: {
+                                        Label("delete", systemImage: "trash")
+                                    }
+                                }
                             }
                         }
                     }
@@ -67,11 +89,17 @@ struct TripListView: View {
             .navigationTitle("tab.trips")
             .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(for: UUID.self) { tripId in
-                if let trip = trips.first(where: { $0.id == tripId }) {
+                if let trip = allTrips.first(where: { $0.id == tripId }) {
                     TripDetailView(
                         trip: trip,
+                        isSample: SampleDataService.isSampleTrip(tripId),
+                        sampleExpenses: SampleDataService.isSampleTrip(tripId) ? SampleDataService.shared.sampleExpenses : nil,
                         switchToScanTab: switchToScanTab,
-                        onTripUpdated: { loadTrips() }
+                        onTripUpdated: { loadTrips() },
+                        onSampleDismissed: {
+                            SampleDataService.shared.dismiss()
+                            navigationPath = NavigationPath()
+                        }
                     )
                     .onAppear {
                         lastViewedTripIdString = tripId.uuidString
@@ -93,6 +121,10 @@ struct TripListView: View {
                 TripEditView(mode: .add)
             }
             .task {
+                // 等待 AuthService 完成 session 恢復，避免在 userId 尚未就緒時查詢
+                while !AuthService.shared.isReady {
+                    try? await Task.sleep(for: .milliseconds(50))
+                }
                 loadTrips()
             }
         }

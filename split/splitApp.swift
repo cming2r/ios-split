@@ -8,6 +8,7 @@
 import SwiftUI
 import UIKit
 import GoogleSignIn
+import GoogleMobileAds
 
 // MARK: - 快捷動作類型
 enum QuickAction: String {
@@ -96,6 +97,7 @@ struct splitApp: App {
                     GIDSignIn.sharedInstance.handle(url)
                 }
                 .task {
+                    await MobileAds.shared.start()
                     await AuthService.shared.restoreSession()
                 }
         }

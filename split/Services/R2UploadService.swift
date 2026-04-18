@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 @MainActor
 class R2UploadService {
@@ -8,9 +9,27 @@ class R2UploadService {
 
     private init() {}
 
+    /// 壓縮圖片：最長邊不超過 maxLength，確保 base64 後不超過 Vercel 4.5MB 限制
+    private func compressImage(_ data: Data, maxLength: CGFloat = 1024) -> Data {
+        guard let image = UIImage(data: data) else { return data }
+        let size = image.size
+        let needsResize = max(size.width, size.height) > maxLength
+        let targetImage: UIImage
+        if needsResize {
+            let scale = maxLength / max(size.width, size.height)
+            let newSize = CGSize(width: size.width * scale, height: size.height * scale)
+            let renderer = UIGraphicsImageRenderer(size: newSize)
+            targetImage = renderer.image { _ in image.draw(in: CGRect(origin: .zero, size: newSize)) }
+        } else {
+            targetImage = image
+        }
+        return targetImage.jpegData(compressionQuality: 0.7) ?? data
+    }
+
     /// 上傳收據圖片到 R2，返回公開 URL
     func uploadReceiptImage(imageData: Data, tripId: UUID, expenseId: UUID) async throws -> String {
-        let base64String = imageData.base64EncodedString()
+        let compressed = compressImage(imageData)
+        let base64String = compressed.base64EncodedString()
 
         let requestBody: [String: Any] = [
             "action": "upload",
