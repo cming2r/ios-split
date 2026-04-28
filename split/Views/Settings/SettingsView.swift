@@ -33,6 +33,7 @@ enum AppAppearance: String, CaseIterable {
 struct SettingsView: View {
     @AppStorage("userCurrencyCode") private var userCurrencyCode: String = ""
     @AppStorage("appAppearance") private var appAppearance: String = AppAppearance.light.rawValue
+    @ObservedObject private var adState = AdBannerState.shared
 
     private let currencies = StaticCurrency.all
 
@@ -86,6 +87,9 @@ Section {
             }
             .navigationTitle("tab.settings")
             .navigationBarTitleDisplayMode(.inline)
+            .safeAreaInset(edge: .bottom) {
+                Color.clear.frame(height: adState.isLoaded ? 60 : 0)
+            }
         }
     }
 }

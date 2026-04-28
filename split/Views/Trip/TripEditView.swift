@@ -202,8 +202,16 @@ Section("notes") {
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("save") {
+                    Button {
                         saveTrip()
+                    } label: {
+                        HStack(spacing: 6) {
+                            if isSaving {
+                                ProgressView()
+                                    .controlSize(.small)
+                            }
+                            Text("save")
+                        }
                     }
                     .disabled(!isValid || isSaving)
                 }
@@ -364,8 +372,10 @@ Section("notes") {
     }
 
     private func saveTrip() {
+        guard !isSaving else { return }
         isSaving = true
         Task {
+            defer { isSaving = false }
             do {
                 switch mode {
                 case .add:
@@ -424,7 +434,6 @@ _ = try await SplitService.shared.updateTrip(trip)
             } catch {
                 print("Failed to save trip: \(error)")
             }
-            isSaving = false
         }
     }
 }

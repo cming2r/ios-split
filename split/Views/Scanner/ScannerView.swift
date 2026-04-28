@@ -4,6 +4,8 @@ import AVFoundation
 
 struct ScannerView: View {
     @EnvironmentObject var quickActionManager: QuickActionManager
+    @ObservedObject private var auth = AuthService.shared
+    @ObservedObject private var adState = AdBannerState.shared
     @State private var trips: [SplitTrip] = []
 
     @State private var selectedImages: [UIImage] = []
@@ -79,7 +81,7 @@ struct ScannerView: View {
                                 Image(uiImage: image)
                                     .resizable()
                                     .scaledToFit()
-                                    .frame(maxWidth: 220, maxHeight: 280)
+                                    .frame(maxWidth: 320, maxHeight: 440)
                                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                                     .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
                             }
@@ -93,6 +95,7 @@ struct ScannerView: View {
                                             .frame(maxWidth: .infinity)
                                     }
                                     .buttonStyle(.borderedProminent)
+                                    .disabled(isProcessing)
 
                                     Button(action: { clearScan() }) {
                                         Text("back")
@@ -232,6 +235,13 @@ struct ScannerView: View {
             .onChange(of: defaultTripIdString) { _, _ in
                 Task { await loadTrips() }
             }
+            .onChange(of: auth.isAuthenticated) { _, _ in
+                Task {
+                    isLoadingTrips = true
+                    selectedTripId = nil
+                    await loadTrips()
+                }
+            }
             .fullScreenCover(isPresented: $showingCamera) {
                 CameraView(capturedImage: Binding(
                     get: { nil as UIImage? },
@@ -336,23 +346,31 @@ struct ScannerView: View {
             } message: {
                 Text("camera.pleaseAllowAccess")
             }
+            .safeAreaInset(edge: .bottom) {
+                Color.clear.frame(height: adState.isLoaded ? 60 : 0)
+            }
         }
     }
 
     private func loadTrips() async {
         do {
             let allTrips = try await SplitService.shared.fetchTrips()
-            // 只顯示進行中 + 結束 7 天內的旅程，但預設旅程一定包含
-            let cutoff = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
             let defaultId = UUID(uuidString: defaultTripIdString)
-            trips = allTrips.filter { $0.endDate >= cutoff || $0.id == defaultId }
-            if selectedTripId == nil || !trips.contains(where: { $0.id == selectedTripId }) {
-                if let defaultId = UUID(uuidString: defaultTripIdString),
-                   trips.contains(where: { $0.id == defaultId }) {
-                    selectedTripId = defaultId
-                } else if let firstTrip = trips.first {
-                    selectedTripId = firstTrip.id
+            // 不足 4 個時全部顯示；4 個以上才套 7 天 cutoff，但預設與當前選取一定保留
+            if allTrips.count < 4 {
+                trips = allTrips
+            } else {
+                let cutoff = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+                let filtered = allTrips.filter {
+                    $0.endDate >= cutoff || $0.id == defaultId || $0.id == selectedTripId
                 }
+                trips = filtered.isEmpty ? allTrips : filtered
+            }
+
+            if let defaultId, trips.contains(where: { $0.id == defaultId }) {
+                selectedTripId = defaultId
+            } else if selectedTripId == nil || !trips.contains(where: { $0.id == selectedTripId }) {
+                selectedTripId = trips.first?.id
             }
         } catch {
             print("Failed to load trips: \(error)")
@@ -383,17 +401,17 @@ struct ScannerView: View {
     }
 
     private func processImages() {
-        guard !selectedImages.isEmpty else { return }
+        guard !selectedImages.isEmpty, !isProcessing else { return }
         errorMessage = nil
-        withAnimation { isProcessing = true }
+        isProcessing = true
         ocrResult = nil
 
         Task {
+            defer { isProcessing = false }
             do {
                 let geminiResult = try await GeminiOCRService.shared.recognizeReceipts(from: selectedImages, currencyCode: selectedTrip?.baseCurrencyCode)
                 let tripTimeZone = selectedTrip?.timeZone ?? .current
                 let result = GeminiOCRService.shared.convertToOCRResult(geminiResult, timeZone: tripTimeZone)
-                withAnimation { isProcessing = false }
 
                 ocrResult = result
                 if result.merchantName == nil && result.amount == nil && result.items.isEmpty {
@@ -406,7 +424,6 @@ struct ScannerView: View {
                     )
                 }
             } catch {
-                withAnimation { isProcessing = false }
                 errorMessage = String(localized: "error.recognitionFailed \(error.localizedDescription)")
                 showingError = true
             }

@@ -374,11 +374,19 @@ Section("details") {
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("save") {
+                    Button {
                         if isValid {
                             saveExpense()
                         } else {
                             showingValidationAlert = true
+                        }
+                    } label: {
+                        HStack(spacing: 6) {
+                            if isSaving {
+                                ProgressView()
+                                    .controlSize(.small)
+                            }
+                            Text("save")
                         }
                     }
                     .disabled(isSaving)

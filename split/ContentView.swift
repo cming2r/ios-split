@@ -48,23 +48,17 @@ struct ContentView: View {
                     .tag(2)
             }
 
-            if isAdLoaded {
-                VStack(spacing: 0) {
-                    Spacer()
-                    BannerAdView(isAdLoaded: $isAdLoaded)
-                        .frame(height: 50)
-                        .frame(maxWidth: .infinity)
-                        .background(Color(.systemBackground))
-                        .id(adRefreshID)
-                        .padding(.bottom, 49)
-                }
-                .ignoresSafeArea(.keyboard)
-            } else {
+            VStack(spacing: 0) {
+                Spacer()
                 BannerAdView(isAdLoaded: $isAdLoaded)
-                    .frame(height: 0)
-                    .hidden()
+                    .frame(height: 60)
+                    .frame(maxWidth: .infinity)
+                    .background(Color(.systemBackground))
                     .id(adRefreshID)
+                    .padding(.bottom, 49)
+                    .opacity(isAdLoaded ? 1 : 0)
             }
+            .ignoresSafeArea(.keyboard)
         }
         .onChange(of: selectedTab) {
             adRefreshID = UUID().uuidString

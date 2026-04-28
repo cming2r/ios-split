@@ -5,6 +5,7 @@ struct SignInView: View {
     @ObservedObject private var auth = AuthService.shared
     @State private var currentNonce: String?
     @State private var errorMessage: String?
+    @State private var isSigningIn = false
 
     var body: some View {
         if auth.isAuthenticated {
@@ -36,8 +37,13 @@ struct SignInView: View {
                 performAppleSignIn()
             } label: {
                 HStack(spacing: 8) {
-                    Image(systemName: "apple.logo")
-                        .font(.system(size: 20))
+                    if isSigningIn {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Image(systemName: "apple.logo")
+                            .font(.system(size: 20))
+                    }
                     Text("signInWithApple")
                         .fontWeight(.medium)
                 }
@@ -51,9 +57,13 @@ struct SignInView: View {
             }
             .buttonStyle(.plain)
             .listRowSeparator(.hidden)
+            .disabled(isSigningIn)
 
             Button {
+                guard !isSigningIn else { return }
+                isSigningIn = true
                 Task {
+                    defer { isSigningIn = false }
                     do {
                         try await auth.signInWithGoogle()
                     } catch {
@@ -62,7 +72,12 @@ struct SignInView: View {
                 }
             } label: {
                 HStack(spacing: 8) {
-                    GoogleLogo(size: 20)
+                    if isSigningIn {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        GoogleLogo(size: 20)
+                    }
                     Text("signInWithGoogle")
                         .fontWeight(.medium)
                 }
@@ -76,6 +91,7 @@ struct SignInView: View {
             }
             .buttonStyle(.plain)
             .listRowSeparator(.hidden)
+            .disabled(isSigningIn)
 
             if let errorMessage {
                 Text(errorMessage)
@@ -92,6 +108,9 @@ struct SignInView: View {
     // MARK: - Apple Sign In
 
     private func performAppleSignIn() {
+        guard !isSigningIn else { return }
+        isSigningIn = true
+
         let nonce = AuthService.randomNonceString()
         currentNonce = nonce
 
@@ -117,9 +136,11 @@ struct SignInView: View {
                   let idToken = String(data: tokenData, encoding: .utf8),
                   let nonce = currentNonce else {
                 errorMessage = String(localized: "auth.error.appleCredential")
+                isSigningIn = false
                 return
             }
             Task {
+                defer { isSigningIn = false }
                 do {
                     try await auth.signInWithApple(idToken: idToken, nonce: nonce)
                 } catch {
@@ -127,6 +148,7 @@ struct SignInView: View {
                 }
             }
         case .failure(let error):
+            isSigningIn = false
             if (error as NSError).code == ASAuthorizationError.canceled.rawValue { return }
             errorMessage = error.localizedDescription
         }

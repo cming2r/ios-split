@@ -1,2 +1,2 @@
-- Mejora en la estabilidad del escaneo de recibos
-- Corrección del problema de carga de viajes
+- Experiencia optimizada de escaneo e inicio de sesión
+- Corrección de errores y mejoras de rendimiento

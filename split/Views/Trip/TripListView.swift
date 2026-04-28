@@ -3,6 +3,8 @@ import SwiftUI
 struct TripListView: View {
     @AppStorage("defaultTripId") private var defaultTripIdString: String = ""
     @AppStorage("lastViewedTripId") private var lastViewedTripIdString: String = ""
+    @ObservedObject private var auth = AuthService.shared
+    @ObservedObject private var adState = AdBannerState.shared
     @State private var trips: [SplitTrip] = []
     @State private var expenses: [UUID: [SplitExpense]] = [:]  // tripId -> expenses
     @State private var showingAddTrip = false
@@ -126,6 +128,14 @@ struct TripListView: View {
                     try? await Task.sleep(for: .milliseconds(50))
                 }
                 loadTrips()
+            }
+            .onChange(of: auth.isAuthenticated) { _, _ in
+                isLoading = true
+                expenses = [:]
+                loadTrips()
+            }
+            .safeAreaInset(edge: .bottom) {
+                Color.clear.frame(height: adState.isLoaded ? 60 : 0)
             }
         }
     }

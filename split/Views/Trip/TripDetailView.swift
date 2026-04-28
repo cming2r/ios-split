@@ -4,6 +4,7 @@ import AVFoundation
 struct TripDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var quickActionManager: QuickActionManager
+    @ObservedObject private var adState = AdBannerState.shared
     @AppStorage("defaultTripId") private var defaultTripIdString: String = ""
 
     @State var trip: SplitTrip
@@ -76,9 +77,24 @@ struct TripDetailView: View {
         .navigationTitle(trip.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    if !isSample {
+            if isSample {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(action: { showingSettlement = true }) {
+                        Image(systemName: "arrow.left.arrow.right")
+                            .foregroundStyle(.blue)
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(role: .destructive) {
+                        onSampleDismissed?()
+                    } label: {
+                        Image(systemName: "trash")
+                            .foregroundStyle(.red)
+                    }
+                }
+            } else {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
                         Button(action: { showingEditTrip = true }) {
                             Label("editTrip", systemImage: "pencil")
                         }
@@ -95,25 +111,16 @@ struct TripDetailView: View {
                             }
                         }
                         Divider()
-                    }
-                    Button(action: { showingSettlement = true }) {
-                        Label("settlement", systemImage: "arrow.left.arrow.right")
-                    }
-                    if !isSample {
+                        Button(action: { showingSettlement = true }) {
+                            Label("settlement", systemImage: "arrow.left.arrow.right")
+                        }
                         Divider()
                         Button(role: .destructive, action: { showingDeleteAlert = true }) {
                             Label("deleteTrip", systemImage: "trash")
                         }
-                    } else {
-                        Divider()
-                        Button(role: .destructive) {
-                            onSampleDismissed?()
-                        } label: {
-                            Label("sample.dismiss", systemImage: "xmark.circle")
-                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
                     }
-                } label: {
-                    Image(systemName: "ellipsis.circle")
                 }
             }
         }
@@ -235,6 +242,9 @@ struct TripDetailView: View {
         }
         .task {
             loadExpenses()
+        }
+        .safeAreaInset(edge: .bottom) {
+            Color.clear.frame(height: adState.isLoaded ? 60 : 0)
         }
     }
 

@@ -1,2 +1,2 @@
-- Improved receipt scanning stability
-- Fixed trip loading issue
+- Enhanced scanning and sign-in experience
+- Bug fixes and performance improvements

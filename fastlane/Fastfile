@@ -1,6 +1,17 @@
 default_platform(:ios)
 
 platform :ios do
+
+  def asc_api_key
+    app_store_connect_api_key(
+      key_id: "6LJ6B9BJ97",
+      issuer_id: "9a9e203d-efd4-49b2-bc4e-3f6eac1a6dbd",
+      key_filepath: "/Users/tuaming/Desktop/type/AuthKey_6LJ6B9BJ97.p8",
+      duration: 1200,
+      in_house: false
+    )
+  end
+
   desc "Capture App Store screenshots"
   lane :screenshots do
     capture_ios_screenshots
@@ -8,20 +19,23 @@ platform :ios do
 
   desc "Push a new beta build to TestFlight"
   lane :beta do
+    api_key = asc_api_key
     build_app(
       scheme: "split",
       export_method: "app-store"
     )
-    upload_to_testflight
+    upload_to_testflight(api_key: api_key)
   end
 
   desc "Push a new release build to the App Store"
   lane :release do
+    api_key = asc_api_key
     build_app(
       scheme: "split",
       export_method: "app-store"
     )
     upload_to_app_store(
+      api_key: api_key,
       force: true,
       skip_screenshots: true
     )
@@ -29,11 +43,14 @@ platform :ios do
 
   desc "Upload metadata only (no binary)"
   lane :metadata do
+    api_key = asc_api_key
     begin
       upload_to_app_store(
+        api_key: api_key,
         skip_binary_upload: true,
         skip_screenshots: true,
         force: true,
+        precheck_include_in_app_purchases: false,
         copyright: "2026 Turadise"
       )
     rescue => e
